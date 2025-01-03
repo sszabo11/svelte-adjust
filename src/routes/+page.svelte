@@ -1,3 +1,7 @@
-<h1>Welcome to your library project</h1>
-<p>Create your package using @sveltejs/package and preview/showcase your work with SvelteKit</p>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script>
+	import Ad from '$lib/components/Ad.svelte';
+</script>
+
+<div class="page">
+	<a href="http://127.0.0.1:9000/lambda-url/click/click?id=13" target="_blank">Server</a>
+</div>
