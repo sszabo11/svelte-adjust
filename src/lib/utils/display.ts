@@ -1,8 +1,9 @@
-import type { Canvas, EditorElement } from '$lib/types.js';
+import { env } from '$env/dynamic/public';
 import { generateHTML } from './generateHTML.js';
 import { query_ad, type Body } from './query.js';
 
 type Request = {
+	ad_unit_id: number;
 	ad_id: number;
 	size_id: number;
 	duration: number;
@@ -13,8 +14,8 @@ type Request = {
 };
 
 type Data = {
-	canvas: Canvas;
-	ad: EditorElement[];
+	canvas: any;
+	ad: any[];
 };
 
 export async function display(
@@ -23,7 +24,7 @@ export async function display(
 	rect: DOMRect
 ): Promise<{
 	error: string | null;
-	html: HTMLDivElement | undefined;
+	html: HTMLAnchorElement | undefined;
 	ad_id?: number;
 	size_id?: number;
 	response: Request | undefined;
@@ -38,10 +39,12 @@ export async function display(
 		return { error, html: undefined, response: undefined, new: undefined };
 	}
 
+	let api_key = env.PUBLIC_ADJUST_DEV_KEY;
 	// Query ad with body
-	const response: Request = await query_ad(body);
+	const response: Request = await query_ad(body, api_key ?? undefined);
 
 	if (response.error) {
+		console.log(response);
 		return { error: response.error, html: undefined, response: undefined, new: undefined };
 	}
 
@@ -79,7 +82,7 @@ export async function display(
 	let original = { width: response.width, height: response.height };
 	let canvas = { ...original, fill: data.canvas.fill };
 
-	const html = generateHTML(scaled, original, canvas, data.ad);
+	const html = generateHTML(scaled, original, canvas, data.ad, true);
 
 	return {
 		error,

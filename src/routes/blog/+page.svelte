@@ -1,8 +1,11 @@
 <script lang="ts">
 	import Ad from '$lib/components/Ad.svelte';
+	import { initializeAds } from '$lib/utils/initializeAds.js';
 	import { onMount } from 'svelte';
 
 	let mounted = false;
+
+	initializeAds(8);
 
 	onMount(() => {
 		mounted = true;
@@ -62,7 +65,7 @@
 			<blockquote>"To plant a garden is to believe in tomorrow." - Audrey Hepburn</blockquote>
 
 			<div class="page-ad">
-				<Ad region="FR" fill="width" />
+				<Ad name="banana" region="US" fill="height" category="Coffee & Tea" />
 			</div>
 
 			<h2>Overcoming Challenges</h2>
@@ -101,9 +104,6 @@
 			<div class="square-ad">
 				<Ad region="US" />
 			</div>
-		</div>
-		<div class="sq">
-			<a href="http://127.0.0.1:9000/lambda-url/click/click?id=13" target="_blank">Server</a>
 		</div>
 	</aside>
 </div>

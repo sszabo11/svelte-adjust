@@ -56,6 +56,8 @@
     "vitest": "^2.0.4"
   },
   "dependencies": {
-    "@sveltejs/adapter-vercel": "^5.5.2"
+    "@sveltejs/adapter-vercel": "^5.5.2",
+    "animate.css": "^4.1.1",
+    "@sveltejs/kit": "^2.16.1"
   }
 }
