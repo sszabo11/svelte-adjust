@@ -19,9 +19,7 @@ type Data = {
 };
 
 export async function display(
-  ratio: number,
   body: Body,
-  rect: { width: number; height: number },
   borderRadius: number,
   priority: number
 ): Promise<{
@@ -35,9 +33,9 @@ export async function display(
   //console.log('Ad ratio: ', ratio);
   let error: null | string = null;
 
-  console.log('ratio fweon', ratio);
+  console.log('ratio fweon', body.ratio);
   // Check if ratio exists
-  if (isNaN(ratio) || !isFinite(ratio)) {
+  if (isNaN(body.ratio) || !isFinite(body.ratio)) {
     error = 'Please specify width and height';
     return { error, html: undefined, response: undefined, new: undefined };
   }
@@ -64,14 +62,14 @@ export async function display(
   //console.log('Response ratio', response_ratio);
 
   if (body.fill === 'width') {
-    height = rect.width / response_ratio;
-    width = rect.width;
+    height = body.width / response_ratio;
+    width = body.width;
   } else if (body.fill === 'height') {
-    width = rect.height * response_ratio;
-    height = rect.height;
+    width = body.height * response_ratio;
+    height = body.height;
   } else {
-    width = rect.height * response_ratio;
-    height = rect.height / response_ratio;
+    width = body.height * response_ratio;
+    height = body.height / response_ratio;
   }
 
   //console.log('Canvas: ', data.canvas);

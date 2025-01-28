@@ -2,7 +2,7 @@
 	import 'animate.css';
 	import { getContext, onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { dev } from '$app/environment';
+	import { browser, dev } from '$app/environment';
 	import { fade, slide } from 'svelte/transition';
 	import { env } from '$env/dynamic/public';
 	import { server_url } from '$lib/utils/server.js';
@@ -25,6 +25,27 @@
 		fill?: 'width' | 'height';
 	};
 
+	type AdData = {
+		ad_unit_tag: string;
+		ad_unit_name: string;
+		ad_unit_group: string | null | undefined;
+		ad_unit_type: string;
+		key: string | undefined;
+		in_viewport: boolean;
+		endpoint: string;
+		site_id: number;
+		tags: string[];
+		category: string;
+		region: string;
+		context: string | string[] | undefined;
+		language: string;
+		gender: string;
+		ratio: number;
+		fill: string;
+		width: number;
+		height: number;
+	};
+
 	let site_id: any = getContext('site_id');
 
 	let server_click = server_url({ prod: '/click/click', dev: '/click/click' });
@@ -33,33 +54,41 @@
 
 	let ad: HTMLAnchorElement;
 	let container_element: HTMLDivElement;
+	let element: HTMLDivElement | null = $state(null);
+
 	let size_id: number | undefined = $state(undefined);
 	let ad_id: number | undefined = $state(undefined);
+	let ad_unit_id: number | undefined = $state(undefined);
+	let ad_unit_tag = $state('');
+	let ad_name = $state('');
+
+	let data: AdData = $state(null);
+
 	let page_time: number | undefined = undefined;
 	let ad_dimensions = $state({ width: 0, height: 0 });
-	let ad_unit_id: number | undefined = $state(undefined);
 
-	let loading = $state(true);
-
-	let element: HTMLDivElement | null = $state(null);
 	let error: string | null = $state(null);
-	let warning: string | null = $state(null);
 	let code_error: string | null = $state(null);
+	let warning: string | null = $state(null);
+
 	let is_group: boolean = $state(group && key ? true : false);
-	let ad_unit_tag = $state('');
 
 	let in_viewport = $state(false);
 	let loader: string = getContext('ad_loader');
+	let loading = $state(true);
 
 	onMount(async () => {
 		console.log('start mount');
+		let intersectionObserverManager = (await import('$lib/utils/intersection.js'))
+			.intersectionObserverManager;
 
 		requestAnimationFrame(async () => {
-			console.log(document.readyState);
-
 			console.log('Ad component');
+
 			let api_key = env.PUBLIC_ADJUST_DEV_KEY;
+
 			console.log(api_key);
+
 			if (dev && $page.url.host.startsWith('localhost') && !api_key) {
 				warning = 'No PUBLIC_ADJUST_DEV_KEY set.  This means you wont be able to update ad units';
 			}
@@ -136,8 +165,6 @@
 
 			console.log(index_of_element);
 
-			let first_element;
-
 			let curr_element: HTMLElement | null = element;
 			let dynamic: string | null = null;
 			//let ad_unit_tag = `${parent.tagName}-${Array.from(parent.classList).join('')}-${parent.id}-${index_of_element}`;
@@ -179,7 +206,10 @@
 				container_rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
 				container_rect.right <= (window.innerWidth || document.documentElement.clientWidth)
 			) {
+				console.log('!Element is in viewport');
 				in_viewport = true;
+			} else {
+				in_viewport = false;
 			}
 
 			console.log(in_viewport);
@@ -207,26 +237,28 @@
 			if (!group_element.dataset.groupName) {
 				is_group = false;
 			}
-			let group_name = dynamic && dynamic + '-' + key;
 
-			let ad_unit_name = group ? key : name;
+			if (!group || !key) {
+				is_group = false;
+			}
+
+			let group_name = dynamic && dynamic + '-' + key;
 
 			ad_name = is_group && group_name ? group_name : name;
 
 			console.log('group element', group_element);
 			console.log('group tag', group_tag);
-
 			console.log('ad unit tag', ad_unit_tag);
-			let body = {
-				ad_unit_tag: is_group && group && key ? group_tag : ad_unit_tag,
+
+			data = {
+				ad_unit_tag: is_group ? group_tag : ad_unit_tag,
 				ad_unit_name: ad_name,
-				ad_unit_group: is_group && group ? group : null,
-				dynamic,
-				in_viewport,
-				key,
+				ad_unit_group: is_group ? group : null,
 				ad_unit_type: is_group && group ? 'group' : 'page',
-				site_id: Number(site_id),
+				key,
+				in_viewport,
 				endpoint: $page.url.pathname,
+				site_id: Number(site_id),
 				tags: tags ?? ['gym', 'equipment', 'fitness'],
 				category: category ?? 'Educational Toys',
 				region: region ?? 'JP',
@@ -238,64 +270,65 @@
 				width: rect.width,
 				height: rect.height
 			};
+
 			console.log(ratio);
 
 			if (!priority) {
 				priority = in_viewport ? 3 : 0;
 			}
-			if (!in_viewport) return;
-			let {
-				error: err,
-				html,
-				response,
-				new: dimensions,
-				ad_id: adId,
-				size_id: size
-			} = await display(ratio, body, { width, height }, borderRadius || 0, priority);
 
-			console.log(response, err);
-			ad_dimensions = dimensions;
+			console.log('fwr', element, in_viewport);
 
-			if (err && err.includes('duplicate key value violates unique constraint "uq_ad_unit"')) {
-				error = `Ad units do not have unique names: ${name}`;
-				return;
-			}
+			await load({ element, priority, in_viewport });
+			console.log('fwre', element, in_viewport);
 
-			console.log('element adunitid', container_element.dataset.adUnitId);
-			//let prev_units = JSON.parse(localStorage.getItem('ad_units') ?? '{}');
-			//localStorage.setItem('ad_units', JSON.stringify({ ...prev_units, [ad_unit_id]: name }));
-			//console.log(prev_units);
+			//let {
+			//	error: err,
+			//	html,
+			//	response,
+			//	new: dimensions,
+			//	ad_id: adId,
+			//	size_id: size
+			//} = await display(ratio, data, { width, height }, borderRadius || 0, priority);
 
-			size_id = size;
-			ad_id = adId;
+			//console.log(response, err);
+			//ad_dimensions = dimensions;
 
-			if (err) {
-				console.log('erro', err);
-				error = err;
-			} else if (html) {
-				ad = html;
+			//if (err && err.includes('duplicate key value violates unique constraint "uq_ad_unit"')) {
+			//	error = `Ad units do not have unique names: ${name}`;
+			//	return;
+			//}
 
-				ad_unit_id = response.ad_unit_id;
-				ad.href = dev ? '' : !error ? `${server_click}?id=${size_id}_${ad_id}_${ad_unit_id}` : '';
+			//size_id = size;
+			//ad_id = adId;
 
-				element.appendChild(html);
-			}
+			//if (err) {
+			//	console.error('query error', err);
+			//	error = err;
+			//} else if (html) {
+			//	ad = html;
+
+			//	ad_unit_id = response.ad_unit_id;
+			//	ad.href = dev ? '' : !error ? `${server_click}?id=${size_id}_${ad_id}_${ad_unit_id}` : '';
+
+			//	element.appendChild(html);
+			//}
 			console.log(ad_unit_id);
 
-			let images = [...ad.querySelectorAll('img')];
-
-			//for (let i = 0; i < images.length; i++){
-			//  images[images.item(i).onlo]
-			//}
-			await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
-				() => {
-					console.log('The images have loaded at last!\nHere are their dimensions (width,height):');
-					console.log(images.map((im) => [im.width, im.height]));
-				}
-			);
-
-			loading = false;
+			if (in_viewport) {
+				let images = [...ad.querySelectorAll('img')];
+				console.log('gev');
+				let now = performance.now();
+				console.log('Loading images...', now);
+				await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
+					() => {
+						console.log('The images have loaded in: ', performance.now() - now, 'ms');
+					}
+				);
+			}
+			console.log('njo');
 			observe(ad_unit_tag);
+			//loading = false;
 		});
 		console.log('finish frame');
 		document.addEventListener('visibilitychange', (event) => {
@@ -324,68 +357,99 @@
 		page_time = performance.now();
 	}
 
-	function getGroupElement(curr_element: Element) {
-		let number_of_ad_units = 0;
-		if (curr_element.id === 'ad-unit') {
-			number_of_ad_units += 1;
+	async function load({
+		element,
+		priority,
+		in_viewport
+	}: {
+		in_viewport: boolean;
+		element: HTMLDivElement;
+		priority: number;
+	}) {
+		console.log('Loading ad...', in_viewport, element);
+		if (!in_viewport) return;
+		let {
+			error: err,
+			html,
+			response,
+			new: dimensions,
+			ad_id: adId,
+			size_id: size
+		} = await display(data, borderRadius || 0, priority);
+
+		console.log(response, err);
+		ad_dimensions = dimensions;
+
+		if (err && err.includes('duplicate key value violates unique constraint "uq_ad_unit"')) {
+			error = `Ad units do not have unique names: ${name}`;
+			return;
 		}
+		size_id = size;
+		ad_id = adId;
 
-		if (number_of_ad_units > 1) {
-			return curr_element;
+		if (err) {
+			console.error('query error', err);
+			error = err;
+		} else if (html) {
+			ad = html;
+
+			ad_unit_id = response.ad_unit_id;
+			ad.href = dev ? '' : !error ? `${server_click}?id=${size_id}_${ad_id}_${ad_unit_id}` : '';
+
+			element.appendChild(html);
 		}
-
-		curr_element = curr_element.parentElement! as Element;
-
-		[...curr_element.children].forEach((child) => {
-			getGroupElement(child);
-		});
-
-		return curr_element;
+		loading = false;
 	}
 
 	function observe(tag: string) {
-		let is_observer = sessionStorage.getItem('view-observer');
+		console.log(container_element);
+		//observer.observe(
+		//	container_element,
+		//	(entry: IntersectionObserverEntry) => (in_viewport = entry.isIntersecting)
+		//);
+		//console.log(in_viewport, container_element);
+		//let is_observer = sessionStorage.getItem('view-observer');
 
-		console.log(is_observer, tag);
-		if ((tag && !is_observer) || is_observer === tag) {
-			console.log('observing', tag);
-			sessionStorage.setItem('view-observer', tag);
-			const intersectionObserver = new IntersectionObserver((entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						console.log('Element is in the viewport!', entry);
+		//console.log('dfe', is_observer, tag, in_viewport);
+		//if ((tag && !is_observer) || is_observer === tag) {
+		//	console.log('observing', tag);
+		//	sessionStorage.setItem('view-observer', tag);
+		const intersectionObserver = new IntersectionObserver((entries) => {
+			entries.forEach(async (entry) => {
+				if (entry.isIntersecting) {
+					console.log('Element is in the viewport!', entry, in_viewport, container_element);
+
+					if (!in_viewport) {
+						console.log('GEr', element, priority);
 						in_viewport = true;
-						// Add logic for when the element is visible
-					} else {
-						console.log('Element is out of the viewport!', entry);
-						in_viewport = false;
-						// Add logic for when the element is not visible
+						await load({ element, priority, in_viewport });
 					}
-				});
+					//in_viewport = true;
+					// Add logic for when the element is visible
+				} else {
+					console.log('Element is out of the viewport!', entry, in_viewport, tag);
+					// Add logic for when the element is not visible
+				}
 			});
-			document.querySelectorAll('#ad-unit').forEach((e) => intersectionObserver.observe(e));
-		}
+		});
+		intersectionObserver.observe(container_element);
+		//}
 	}
-
-	//$effect(() => {
-	//	observe(ad_unit_id);
-	//});
 
 	let hover = $state(false);
 	function setHover(v: boolean) {
 		hover = v;
 	}
-	//{#if dev && hover}
-	//	<div
-	//		in:slide={{ axis: 'x', duration: 300 }}
-	//		style="right: calc(5px - {ad_dimensions.width - element.getBoundingClientRect().width}px)"
-	//		class="name"
-	//	>
-	//		<span>{name}</span>
-	//	</div>
-	//{/if}
 
-	let ad_name = $state('');
+	//$effect(() => {
+	//	console.log('grb', in_viewport, container_element);
+	//	if (in_viewport && container_element && browser) {
+	//		console.log('grb');
+	//		load({ element, priority, in_viewport });
+	//	}
+	//});
+
+	$inspect(in_viewport).with((type, value) => console.log('fvwr', value, container_element));
 </script>
 
 <div
