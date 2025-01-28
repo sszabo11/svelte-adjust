@@ -1,6 +1,6 @@
 {
-  "name": "@adjust/svelte",
-  "version": "0.0.1",
+  "name": "svelte-adjust",
+  "version": "0.0.30",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && npm run package",
@@ -57,7 +57,6 @@
   },
   "dependencies": {
     "@sveltejs/adapter-vercel": "^5.5.2",
-    "animate.css": "^4.1.1",
     "@sveltejs/kit": "^2.16.1"
   }
 }

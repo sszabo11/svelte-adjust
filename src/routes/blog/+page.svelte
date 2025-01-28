@@ -2,12 +2,14 @@
 	import Ad from '$lib/components/Ad.svelte';
 	import { initializeAds } from '$lib/utils/initializeAds.js';
 	import { onMount } from 'svelte';
+	import AdContainer from './_components/AdContainer.svelte';
 
 	let mounted = false;
 
-	initializeAds(8);
+	initializeAds('8');
 
 	onMount(() => {
+		console.log('munt');
 		mounted = true;
 	});
 </script>
@@ -64,9 +66,7 @@
 
 			<blockquote>"To plant a garden is to believe in tomorrow." - Audrey Hepburn</blockquote>
 
-			<div class="page-ad">
-				<Ad name="banana" region="US" fill="height" category="Coffee & Tea" />
-			</div>
+			<AdContainer />
 
 			<h2>Overcoming Challenges</h2>
 			<p>

@@ -1,4 +1,3 @@
-import 'animate.css';
 import { animations } from './animations.js';
 
 type Dimensions = {
@@ -10,6 +9,7 @@ export function generateHTML(
 	original: Dimensions,
 	canvas: any,
 	elements: any[],
+	borderRadius: number | undefined,
 	link: boolean = false
 ) {
 	let root: HTMLElement;
@@ -18,6 +18,7 @@ export function generateHTML(
 	} else {
 		root = document.createElement('div');
 	}
+	console.log(borderRadius);
 
 	let rootWidth = scaled.width;
 	let rootHeight = scaled.height;
@@ -30,7 +31,9 @@ export function generateHTML(
 	root.setAttribute('target', '_blank');
 	root.style.position = 'relative';
 	root.style.backgroundColor = canvas.fill;
-	root.style.borderRadius = px(canvas.borderRadius || 10);
+	root.style.borderRadius = px(
+		borderRadius !== undefined ? borderRadius : canvas.borderRadius || 10
+	);
 	root.classList.add('animate__fadeIn');
 	root.style.animationDuration = '400ms';
 
