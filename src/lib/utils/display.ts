@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/public';
+import type { EditorElement } from '$lib/types.js';
 import { generateHTML } from './generateHTML.js';
 import { query_ad, type Body } from './query.js';
 
@@ -27,6 +28,7 @@ export async function display(
   html: HTMLAnchorElement | undefined;
   ad_id?: number;
   size_id?: number;
+  elements: EditorElement[] | undefined;
   response: Request | undefined;
   new: { width: number; height: number } | undefined;
 }> {
@@ -92,6 +94,7 @@ export async function display(
     error,
     html,
     response,
+    elements: data.ad,
     new: { width, height },
     size_id: response.size_id,
     ad_id: response.ad_id

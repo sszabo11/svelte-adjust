@@ -11,7 +11,7 @@
 	import ErrorMessage from './error/ErrorMessage.svelte';
 	import Spinner from './loaders/Spinner.svelte';
 	import RabbitLoader from './loaders/RabbitLoader.svelte';
-	import type { ImageElement } from '$lib/types.js';
+	import type { EditorElement, ImageElement } from '$lib/types.js';
 
 	type Props = {
 		name: string;
@@ -390,6 +390,7 @@
 			response,
 			new: dimensions,
 			ad_id: adId,
+			elements,
 			size_id: size
 		} = await display(data, borderRadius || 0, priority);
 
@@ -415,7 +416,27 @@
 			element.appendChild(html);
 		}
 		let images = [...ad.querySelectorAll('img')];
+		let fonts = findFonts(elements!);
+		loadFonts(fonts);
 		await waitForImages(images);
+	}
+
+	function findFonts(elements: EditorElement[]) {
+		return elements
+			.map((e) => {
+				if (e.type === 'text' && e.font) {
+					return e.font.family;
+				}
+			})
+			.filter((f) => f !== undefined);
+	}
+
+	function loadFonts(fonts: string[]) {
+		WebFont.load({
+			google: {
+				families: fonts
+			}
+		});
 	}
 
 	function observe(tag: string) {
@@ -470,6 +491,9 @@
 	$inspect(in_viewport).with((type, value) => console.log('fvwr', value, container_element));
 </script>
 
+<svelte:head>
+	<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+</svelte:head>
 <div
 	onclick={setTimer}
 	onkeydown={() => {}}
