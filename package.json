@@ -1,6 +1,10 @@
 {
   "name": "svelte-adjust",
   "version": "0.0.32",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/repository-name.git"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && npm run package",
