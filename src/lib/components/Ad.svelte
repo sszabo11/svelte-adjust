@@ -11,6 +11,7 @@
 	import ErrorMessage from './error/ErrorMessage.svelte';
 	import Spinner from './loaders/Spinner.svelte';
 	import RabbitLoader from './loaders/RabbitLoader.svelte';
+	import type { ImageElement } from '$lib/types.js';
 
 	type Props = {
 		name: string;
@@ -317,14 +318,17 @@
 
 			if (in_viewport) {
 				let images = [...ad.querySelectorAll('img')];
-				console.log('gev');
-				let now = performance.now();
-				console.log('Loading images...', now);
-				await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
-					() => {
-						console.log('The images have loaded in: ', performance.now() - now, 'ms');
-					}
-				);
+				await waitForImages(images);
+				console.log('The images done');
+				//console.log('gev');
+				//let now = performance.now();
+				//console.log('Loading images...', now);
+				//await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
+				//	() => {
+				//		console.log('The images have loaded in: ', performance.now() - now, 'ms');
+				//	}
+				//);
+				loading = false;
 			}
 			console.log('njo');
 			observe(ad_unit_tag);
@@ -349,6 +353,15 @@
 		}
 		console.log('end mount');
 	});
+
+	async function waitForImages(images: HTMLImageElement[]) {
+		await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
+			() => {
+				console.log('The images have loaded for: ', name);
+				return true;
+			}
+		);
+	}
 
 	let details = $state(null);
 	let show_details = $state(false);
@@ -398,7 +411,6 @@
 
 			element.appendChild(html);
 		}
-		loading = false;
 	}
 
 	function observe(tag: string) {
@@ -423,6 +435,7 @@
 						console.log('GEr', element, priority);
 						in_viewport = true;
 						await load({ element, priority, in_viewport });
+						loading = false;
 					}
 					//in_viewport = true;
 					// Add logic for when the element is visible
@@ -488,6 +501,7 @@
 			class="ad"
 			aria-label="Ad"
 			onfocus={() => {}}
+			class:hide={loading}
 			role="link"
 			tabindex="-1"
 			onmouseover={dev ? () => setHover(true) : null}
@@ -529,6 +543,10 @@
 		background-color: #333333;
 	}
 
+	.hide {
+		opacity: 0;
+	}
+
 	.loading-container {
 		width: 100%;
 		height: 100%;
@@ -558,10 +576,6 @@
 		font-size: 14px;
 	}
 
-	.hide {
-		display: none;
-	}
-
 	.ad-container {
 		width: 100%;
 		height: 100%;
@@ -580,6 +594,7 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+		transition: opacity 0.2s ease-in;
 	}
 
 	.warning-container {
