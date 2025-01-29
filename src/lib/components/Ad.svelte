@@ -317,19 +317,22 @@
 			console.log(ad_unit_id);
 
 			if (in_viewport) {
-				let images = [...ad.querySelectorAll('img')];
-				await waitForImages(images);
-				console.log('The images done');
-				//console.log('gev');
-				//let now = performance.now();
-				//console.log('Loading images...', now);
-				//await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
-				//	() => {
-				//		console.log('The images have loaded in: ', performance.now() - now, 'ms');
-				//	}
-				//);
 				loading = false;
 			}
+			//if (in_viewport) {
+			//	let images = [...ad.querySelectorAll('img')];
+			//	await waitForImages(images);
+			//	console.log('The images done');
+			//	//console.log('gev');
+			//	//let now = performance.now();
+			//	//console.log('Loading images...', now);
+			//	//await Promise.all(images.map((im) => new Promise((resolve) => (im.onload = resolve)))).then(
+			//	//	() => {
+			//	//		console.log('The images have loaded in: ', performance.now() - now, 'ms');
+			//	//	}
+			//	//);
+			//	loading = false;
+			//}
 			console.log('njo');
 			observe(ad_unit_tag);
 			//loading = false;
@@ -411,6 +414,8 @@
 
 			element.appendChild(html);
 		}
+		let images = [...ad.querySelectorAll('img')];
+		await waitForImages(images);
 	}
 
 	function observe(tag: string) {
