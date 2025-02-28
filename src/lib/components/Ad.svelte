@@ -34,7 +34,6 @@
 		key: string | undefined;
 		in_viewport: boolean;
 		endpoint: string;
-		site_id: number;
 		tags: string[];
 		category: string;
 		region: string;
@@ -47,9 +46,7 @@
 		height: number;
 	};
 
-	let site_id: any = getContext('site_id');
-
-	let server_click = server_url({ prod: '/click/click', dev: '/click/click' });
+	let server_click = server_url({ prod: '/click/click', dev: '/click/click/click/click' });
 	let { name, key, group, region, fill, priority, category, context, tags, borderRadius }: Props =
 		$props();
 
@@ -86,18 +83,12 @@
 		requestAnimationFrame(async () => {
 			console.log('Ad component');
 
-			let api_key = env.PUBLIC_ADJUST_DEV_KEY;
+			let api_key = env.PUBLIC_ADJUST_KEY;
 
 			console.log(api_key);
 
 			if (dev && $page.url.host.startsWith('localhost') && !api_key) {
-				warning = 'No PUBLIC_ADJUST_DEV_KEY set.  This means you wont be able to update ad units';
-			}
-
-			if (!site_id || isNaN(Number(site_id))) {
-				console.log('site_id', Number(site_id));
-				error = 'No site_id found in context';
-				return;
+				warning = 'Development PUBLIC_ADJUST_KEY not set. Please use your development key';
 			}
 
 			if (!name) {
@@ -251,6 +242,9 @@
 			console.log('group tag', group_tag);
 			console.log('ad unit tag', ad_unit_tag);
 
+			let pageParams = $page.params;
+			let pattern = $page.route.id && convertBracketsToColons($page.route.id);
+
 			data = {
 				ad_unit_tag: is_group ? group_tag : ad_unit_tag,
 				ad_unit_name: ad_name,
@@ -258,8 +252,7 @@
 				ad_unit_type: is_group && group ? 'group' : 'page',
 				key,
 				in_viewport,
-				endpoint: $page.url.pathname,
-				site_id: Number(site_id),
+				endpoint: pageParams && pattern ? pattern : $page.url.pathname,
 				tags: tags ?? ['gym', 'equipment', 'fitness'],
 				category: category ?? 'Educational Toys',
 				region: region ?? 'JP',
@@ -372,6 +365,9 @@
 	function setTimer() {
 		page_time = performance.now();
 	}
+	function convertBracketsToColons(path: string) {
+		return path.replace(/\[([^\]]+)\]/g, ':$1');
+	}
 
 	async function load({
 		element,
@@ -396,6 +392,11 @@
 
 		console.log(response, err);
 		ad_dimensions = dimensions;
+
+		if (err && err.includes('api key does not exist')) {
+			error = `API key does not exist. View your API keys at https://adjustv4.vercel.app/site/dashboard/keys`;
+			return;
+		}
 
 		if (err && err.includes('duplicate key value violates unique constraint "uq_ad_unit"')) {
 			error = `Ad units do not have unique names: ${name}`;

@@ -16,15 +16,19 @@
 
 <style>
 	.error-container {
-		background-color: #ff8c8c;
+		background-color: #ff000630;
+		border: 1px solid #ff3f4450;
 		border-radius: 12px;
+		font-family: 'Inter';
 		text-align: left;
 		padding: 12px;
 		box-sizing: border-box;
+		width: 100%;
+		height: 100%;
 	}
 	.error {
 		font-weight: 500;
 		font-size: 18px;
-		color: #831414;
+		color: #f05256;
 	}
 </style>
